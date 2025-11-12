@@ -1,9 +1,9 @@
 """
 API routes for Task Manager
 """
-from fastapi import APIRouter, HTTPException, status
-from typing import List
-from src.models import Task, TaskCreate, TaskUpdate
+from fastapi import APIRouter, HTTPException, status, Query
+from typing import List, Optional
+from src.models import Task, TaskCreate, TaskUpdate, TaskStatus, TaskPriority
 from src.database import db
 
 router = APIRouter()
@@ -16,9 +16,29 @@ async def create_task(task: TaskCreate):
 
 
 @router.get("/tasks", response_model=List[Task])
-async def get_tasks():
-    """Get all tasks"""
-    return db.get_all_tasks()
+async def get_tasks(
+    status: Optional[str] = Query(None, description="Filter by task status"),
+    priority: Optional[str] = Query(None, description="Filter by task priority")
+):
+    """Get all tasks with optional filtering by status and priority"""
+    tasks = db.get_all_tasks()
+
+    # BUG 1: No validation if status/priority values are valid
+    if status:
+        tasks = [task for task in tasks if task.status == status]
+
+    # BUG 2: Using string comparison instead of enum comparison
+    if priority:
+        tasks = [task for task in tasks if task.priority == priority]
+
+    return tasks
+
+
+@router.get("/tasks/search", response_model=List[Task])
+async def search_tasks(q: str = Query(..., min_length=1, description="Search query")):
+    """Search tasks by title or description"""
+    # BUG 5: No max length validation on search query
+    return db.search_tasks(q)
 
 
 @router.get("/tasks/{task_id}", response_model=Task)

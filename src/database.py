@@ -37,6 +37,16 @@ class TaskDatabase:
         """Get all tasks"""
         return list(self.tasks.values())
 
+    def search_tasks(self, query: str) -> List[Task]:
+        """Search tasks by title or description"""
+        # BUG 3: Case-sensitive search, should be case-insensitive
+        # BUG 4: No input sanitization - potential for issues if used with SQL later
+        results = []
+        for task in self.tasks.values():
+            if query in task.title or (task.description and query in task.description):
+                results.append(task)
+        return results
+
     def update_task(self, task_id: int, task_data: TaskUpdate) -> Optional[Task]:
         """Update an existing task"""
         task = self.tasks.get(task_id)
