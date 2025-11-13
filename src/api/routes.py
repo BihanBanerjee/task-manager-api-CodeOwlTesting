@@ -1,9 +1,9 @@
 """
 API routes for Task Manager
 """
-from fastapi import APIRouter, HTTPException, status
-from typing import List
-from src.models import Task, TaskCreate, TaskUpdate
+from fastapi import APIRouter, HTTPException, status, Query
+from typing import List, Optional
+from src.models import Task, TaskCreate, TaskUpdate, TaskStatus, TaskPriority
 from src.database import db
 
 router = APIRouter()
@@ -16,9 +16,23 @@ async def create_task(task: TaskCreate):
 
 
 @router.get("/tasks", response_model=List[Task])
-async def get_tasks():
-    """Get all tasks"""
-    return db.get_all_tasks()
+async def get_tasks(
+    status: Optional[TaskStatus] = Query(None, description="Filter by task status"),
+    priority: Optional[TaskPriority] = Query(None, description="Filter by task priority")
+):
+    """Get all tasks with optional filtering by status and priority"""
+    tasks = db.get_all_tasks()
+    return [
+        task for task in tasks
+        if (status is None or task.status == status)
+        and (priority is None or task.priority == priority)
+    ]
+
+
+@router.get("/tasks/search", response_model=List[Task])
+async def search_tasks(q: str = Query(..., min_length=1, max_length=255, description="Search query")):
+    """Search tasks by title or description"""
+    return db.search_tasks(q)
 
 
 @router.get("/tasks/{task_id}", response_model=Task)
