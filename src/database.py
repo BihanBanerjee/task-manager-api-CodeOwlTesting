@@ -39,11 +39,16 @@ class TaskDatabase:
 
     def search_tasks(self, query: str) -> List[Task]:
         """Search tasks by title or description"""
-        # BUG 3: Case-sensitive search, should be case-insensitive
-        # BUG 4: No input sanitization - potential for issues if used with SQL later
+        import re
+        # Sanitize input by removing non-alphanumeric characters except spaces
+        sanitized_query = re.sub(r'[^\w\s]', '', query).lower()
+
         results = []
         for task in self.tasks.values():
-            if query in task.title or (task.description and query in task.description):
+            title_lower = task.title.lower()
+            description_lower = task.description.lower() if task.description else ""
+
+            if sanitized_query in title_lower or sanitized_query in description_lower:
                 results.append(task)
         return results
 
