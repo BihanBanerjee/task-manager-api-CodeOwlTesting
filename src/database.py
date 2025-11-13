@@ -34,9 +34,14 @@ class TaskDatabase:
         """Get a task by ID"""
         return self.tasks.get(task_id)
 
-    def get_all_tasks(self) -> List[Task]:
-        """Get all tasks"""
-        return list(self.tasks.values())
+    def get_all_tasks(self, skip: int = 0, limit: int = 100) -> List[Task]:
+        """Get all tasks with pagination"""
+        tasks = list(self.tasks.values())
+        return tasks[skip:skip + limit]
+
+    def count_tasks(self) -> int:
+        """Get total count of tasks"""
+        return len(self.tasks)
 
     def search_tasks(self, query: str) -> List[Task]:
         """Search tasks by title or description"""

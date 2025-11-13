@@ -2,7 +2,7 @@
 Data models for Task Manager API
 """
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List, Generic, TypeVar
 from datetime import datetime
 from enum import Enum
 
@@ -50,3 +50,21 @@ class Task(TaskBase):
 
     class Config:
         from_attributes = True
+
+
+T = TypeVar('T')
+
+
+class PaginationMetadata(BaseModel):
+    """Pagination metadata"""
+    total: int
+    skip: int
+    limit: int
+    has_next: bool
+    has_prev: bool
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    """Generic paginated response"""
+    items: List[T]
+    metadata: PaginationMetadata

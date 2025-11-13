@@ -46,7 +46,9 @@ def test_get_all_tasks():
 
     response = client.get("/api/tasks")
     assert response.status_code == 200
-    assert len(response.json()) == 2
+    data = response.json()
+    assert len(data["items"]) == 2
+    assert data["metadata"]["total"] == 2
 
 
 def test_get_task_by_id():
@@ -93,3 +95,44 @@ def test_delete_task():
     # Verify it's deleted
     get_response = client.get(f"/api/tasks/{task_id}")
     assert get_response.status_code == 404
+
+
+def test_pagination_basic():
+    """Test basic pagination"""
+    # Create 5 tasks
+    for i in range(5):
+        client.post("/api/tasks", json={"title": f"Task {i+1}"})
+
+    # Get first 2 tasks
+    response = client.get("/api/tasks?skip=0&limit=2")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) == 2
+    assert data["metadata"]["total"] == 5
+    assert data["metadata"]["skip"] == 0
+    assert data["metadata"]["limit"] == 2
+    assert data["metadata"]["has_next"] is True
+    assert data["metadata"]["has_prev"] is False
+
+
+def test_pagination_skip():
+    """Test pagination with skip parameter"""
+    # Create 5 tasks
+    for i in range(5):
+        client.post("/api/tasks", json={"title": f"Task {i+1}"})
+
+    # Skip first 2 tasks
+    response = client.get("/api/tasks?skip=2&limit=2")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) == 2
+    assert data["metadata"]["has_next"] is True
+    assert data["metadata"]["has_prev"] is True
+
+
+def test_pagination_negative_values():
+    """Test pagination with negative values"""
+    client.post("/api/tasks", json={"title": "Task 1"})
+
+    response = client.get("/api/tasks?skip=-1&limit=-1")
+    assert response.status_code == 200

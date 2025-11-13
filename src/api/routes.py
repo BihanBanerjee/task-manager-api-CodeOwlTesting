@@ -3,7 +3,7 @@ API routes for Task Manager
 """
 from fastapi import APIRouter, HTTPException, status, Query
 from typing import List, Optional
-from src.models import Task, TaskCreate, TaskUpdate, TaskStatus, TaskPriority
+from src.models import Task, TaskCreate, TaskUpdate, TaskStatus, TaskPriority, PaginatedResponse, PaginationMetadata
 from src.database import db
 
 router = APIRouter()
@@ -15,18 +15,37 @@ async def create_task(task: TaskCreate):
     return db.create_task(task)
 
 
-@router.get("/tasks", response_model=List[Task])
+@router.get("/tasks", response_model=PaginatedResponse[Task])
 async def get_tasks(
+    skip: int = Query(0, description="Number of tasks to skip"),
+    limit: int = Query(100, description="Maximum number of tasks to return"),
     status: Optional[TaskStatus] = Query(None, description="Filter by task status"),
     priority: Optional[TaskPriority] = Query(None, description="Filter by task priority")
 ):
-    """Get all tasks with optional filtering by status and priority"""
-    tasks = db.get_all_tasks()
-    return [
+    """Get all tasks with optional filtering by status and priority, with pagination"""
+    # Get all tasks from database with pagination
+    tasks = db.get_all_tasks(skip=skip, limit=limit)
+
+    # Apply filters
+    filtered_tasks = [
         task for task in tasks
         if (status is None or task.status == status)
         and (priority is None or task.priority == priority)
     ]
+
+    # Get total count
+    total = db.count_tasks()
+
+    # Create pagination metadata
+    metadata = PaginationMetadata(
+        total=total,
+        skip=skip,
+        limit=limit,
+        has_next=skip + limit < total,
+        has_prev=skip > 0
+    )
+
+    return PaginatedResponse(items=filtered_tasks, metadata=metadata)
 
 
 @router.get("/tasks/search", response_model=List[Task])
