@@ -22,14 +22,11 @@ async def get_tasks(
 ):
     """Get all tasks with optional filtering by status and priority"""
     tasks = db.get_all_tasks()
-
-    if status:
-        tasks = [task for task in tasks if task.status == status]
-
-    if priority:
-        tasks = [task for task in tasks if task.priority == priority]
-
-    return tasks
+    return [
+        task for task in tasks
+        if (status is None or task.status == status)
+        and (priority is None or task.priority == priority)
+    ]
 
 
 @router.get("/tasks/search", response_model=List[Task])

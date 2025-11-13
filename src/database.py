@@ -1,6 +1,7 @@
 """
 Simple in-memory database for Task Manager API
 """
+import re
 from datetime import datetime
 from typing import Dict, List, Optional
 from src.models import Task, TaskCreate, TaskUpdate, TaskStatus, TaskPriority
@@ -39,9 +40,12 @@ class TaskDatabase:
 
     def search_tasks(self, query: str) -> List[Task]:
         """Search tasks by title or description"""
-        import re
         # Sanitize input by removing non-alphanumeric characters except spaces
-        sanitized_query = re.sub(r'[^\w\s]', '', query).lower()
+        sanitized_query = re.sub(r'[^\w\s]', '', query).lower().strip()
+
+        # Return empty list if sanitized query is empty to avoid matching all tasks
+        if not sanitized_query:
+            return []
 
         results = []
         for task in self.tasks.values():
